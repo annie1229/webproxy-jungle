@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	exit(1);
     }
 
-    listenfd = Open_listenfd(argv[1]);
+    listenfd = Open_listenfd(argv[1]); // 포트 주소를 넘기면 listen descriptor
     while (1) {
 	clientlen = sizeof(clientaddr);
 	connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen); //line:netp:tiny:accept
