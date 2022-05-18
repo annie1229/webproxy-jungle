@@ -1,7 +1,13 @@
 /*
- * adder.c - a minimal CGI program that adds two numbers together
+ * adder.c
+ * SWJungle 4기 이혜진
+ * Week07 : Web-Server
+ * Problem 11.10, 11.11 관련 코드 추가
+ *
+ * Reference 
+ * 1. Computer System : A Programmer's Perspective
+ * 2. https://dreamanddead.github.io/CSAPP-3e-Solutions/chapter11/
  */
-/* $begin adder */
 #include "csapp.h"
 
 int main(void) {
@@ -13,12 +19,14 @@ int main(void) {
     if ((buf = getenv("QUERY_STRING")) != NULL) {
         p = strchr(buf, '&');
         *p = '\0';
-        // strcpy(arg1, buf);
-        // strcpy(arg2, p+1);
-        // n1 = atoi(arg1);
-        // n2 = atoi(arg2);
+        /*
+        * Problem 11.10 관련 start
+        */
         sscanf(buf, "first=%d", &n1);
         sscanf(p+1, "second=%d", &n2);
+        /*
+        * Problem 11.10 관련 end
+        */
     }
     method = getenv("REQUEST_METHOD");
     /* Make the response body */
@@ -31,11 +39,15 @@ int main(void) {
     printf("Connection: close\r\n");
     printf("Content-length: %d\r\n", (int)strlen(content));
     printf("Content-type: text/html\r\n\r\n");
-
+    /*
+    * Problem 11.11 관련 start
+    */
     if (strcasecmp(method, "HEAD") != 0)
         printf("%s", content);
+    /*
+    * Problem 11.11 관련 end
+    */
     fflush(stdout);
 
     exit(0);
 }
-/* $end adder */

@@ -2,7 +2,7 @@
  * tiny.c
  * SWJungle 4기 이혜진
  * Week07 : Web-Server
- * tiny 웹서버 구현 + Problem 11.6-c, 11.7, 11.9, 11.11 관련 코드 추가
+ * tiny 웹서버 구현 + Problem 11.6-c, 11.7, 11.9, 11.10, 11.11 관련 코드 추가
  *
  * Reference 
  * 1. Computer System : A Programmer's Perspective
@@ -18,7 +18,8 @@ void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs, char *method);  // Problem 11.11 관련 method 매개변수 추가
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
     int listenfd, connfd;
     char hostname[MAXLINE], port[MAXLINE];
     socklen_t clientlen;
@@ -34,19 +35,18 @@ int main(int argc, char **argv) {
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-
         Getnameinfo((SA *) &clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
         printf("Accepted connection from (%s, %s)\n", hostname, port); // 연결된 client의 hostname, port 출력
-        
         doit(connfd);
         Close(connfd);
     }
 }
 
 /*
- * doit - HTTP request/response 처리하는 함수
+ * doit - handle one HTTP request/response transaction
  */
-void doit(int fd) {
+void doit(int fd) 
+{
     int is_static;
     struct stat sbuf;
     char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
@@ -90,9 +90,10 @@ void doit(int fd) {
 }
 
 /*
- * read_requesthdrs - HTTP request header 읽는 함수
+ * read_requesthdrs - read HTTP request headers
  */
-void read_requesthdrs(rio_t *rp) {
+void read_requesthdrs(rio_t *rp) 
+{
     char buf[MAXLINE];
 
     Rio_readlineb(rp, buf, MAXLINE);
@@ -105,9 +106,11 @@ void read_requesthdrs(rio_t *rp) {
 }
 
 /*
- * parse_uri - uri로부터 filename, cgiargs 추출하고, 동적콘텐츠(1)인지 정적콘텐츠(0)인지 구분하여 리턴
+ * parse_uri - parse URI into filename and CGI args
+ *             return 0 if dynamic content, 1 if static
  */
-int parse_uri(char *uri, char *filename, char *cgiargs) {
+int parse_uri(char *uri, char *filename, char *cgiargs) 
+{
     char *ptr;
 
     if (!strstr(uri, "cgi-bin")) {  /* Static content */
@@ -133,15 +136,15 @@ int parse_uri(char *uri, char *filename, char *cgiargs) {
 }
 
 /*
- * serve_static - 정적 콘텐츠 처리하는 함수
+ * serve_static - copy a file back to the client 
  */
-void serve_static(int fd, char *filename, int filesize, char *method) {
+void serve_static(int fd, char *filename, int filesize, char *method)
+{
     int srcfd;
     char *srcp, filetype[MAXLINE], buf[MAXBUF];
 
-    if (strcasecmp(method, "HEAD") == 0) // Problem 11.11 관련 내용
+    if (strcasecmp(method, "HEAD") == 0)
         return;
-
     /* Send response headers to client */
     get_filetype(filename, filetype);
     sprintf(buf, "HTTP/1.0 200 OK\r\n");
@@ -169,9 +172,10 @@ void serve_static(int fd, char *filename, int filesize, char *method) {
 }
 
 /*
- * get_filetype - filename으로부터 알아낸 filetype 담기
+ * get_filetype - derive file type from file name
  */
-void get_filetype(char *filename, char *filetype) {
+void get_filetype(char *filename, char *filetype) 
+{
     if (strstr(filename, ".html"))
 	    strcpy(filetype, "text/html");
     else if (strstr(filename, ".gif"))
@@ -195,7 +199,7 @@ void get_filetype(char *filename, char *filetype) {
 }  
 
 /*
- * serve_dynamic - 동적콘텐츠 처리하는 함수(자식 프로세스를 만들어서 처리)
+ * serve_dynamic - run a CGI program on behalf of the client
  */
 void serve_dynamic(int fd, char *filename, char *cgiargs, char *method) 
 {
@@ -207,19 +211,21 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
     sprintf(buf, "Server: Tiny Web Server\r\n");
     Rio_writen(fd, buf, strlen(buf));
   
-    if (Fork() == 0) { /* 자식프로세스 생성 */
+    if (Fork() == 0) { /* Child */
+        /* Real server would set all CGI vars here */
         setenv("QUERY_STRING", cgiargs, 1);
         setenv("REQUEST_METHOD", method, 1);
-        Dup2(fd, STDOUT_FILENO);         /* stdout을 클라이언트(fd)로 연결 */
+        Dup2(fd, STDOUT_FILENO);         /* Redirect stdout to client */
         Execve(filename, emptylist, environ); /* Run CGI program */
     }
-    Wait(NULL); /* 부모프로세스는 자식프로세스가 끝날때까지 기다림 */
+    Wait(NULL); /* Parent waits for and reaps child */
 }
 
 /*
- * clienterror - 클라이언트에 출력할 에러메세지
+ * clienterror - returns an error message to the client
  */
-void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) 
+{
     char buf[MAXLINE];
 
     /* Print the HTTP response headers */
