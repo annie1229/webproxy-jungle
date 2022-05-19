@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
     }
 
     listenfd = Open_listenfd(argv[1]); // 포트를 넘기면 listen descriptor 생성
+    
     while (1) {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
@@ -115,7 +116,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs) {
         strcpy(filename, ".");
         strcat(filename, uri);
         if (uri[strlen(uri)-1] == '/')
-            strcat(filename, "home.html");
+            strcat(filename, "adder.html");
         return 1;
     }
     else {  /* Dynamic content */
@@ -130,6 +131,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs) {
         strcat(filename, uri);
         return 0;
     }
+    return 0;
 }
 
 /*
@@ -207,28 +209,28 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
     sprintf(buf, "Server: Tiny Web Server\r\n");
     Rio_writen(fd, buf, strlen(buf));
   
-    if (Fork() == 0) { /* 자식프로세스 생성 */
+    if (Fork() == 0) { /* 자식프로세스라면 */
         setenv("QUERY_STRING", cgiargs, 1);
         setenv("REQUEST_METHOD", method, 1);
-        Dup2(fd, STDOUT_FILENO);         /* stdout을 클라이언트(fd)로 연결 */
+        Dup2(fd, STDOUT_FILENO); /* stdout을 클라이언트(fd)로 연결 */
         Execve(filename, emptylist, environ); /* Run CGI program */
     }
     Wait(NULL); /* 부모프로세스는 자식프로세스가 끝날때까지 기다림 */
 }
 
 /*
- * clienterror - 클라이언트에 출력할 에러메세지
+ * clienterror - 클라이언트에 출력할 에러메세지 담아서 보내기
  */
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXLINE];
 
-    /* Print the HTTP response headers */
+    /* HTTP response headers */
     sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
     Rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "Content-type: text/html\r\n\r\n");
     Rio_writen(fd, buf, strlen(buf));
 
-    /* Print the HTTP response body */
+    /* HTTP response body */
     sprintf(buf, "<html><title>Tiny Error</title>");
     Rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "<body bgcolor=""ffffff"">\r\n");
